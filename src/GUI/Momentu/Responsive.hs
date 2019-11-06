@@ -19,7 +19,7 @@
 -- of a vertically laid out parent will not use parentheses as the
 -- hierarchy is already clear in the layout itself.
 
-{-# LANGUAGE TemplateHaskell, FlexibleInstances, MultiParamTypeClasses, TypeFamilies, UndecidableInstances, DerivingVia #-}
+{-# LANGUAGE TemplateHaskell, FlexibleInstances, MultiParamTypeClasses, TypeFamilies, UndecidableInstances #-}
 
 module GUI.Momentu.Responsive
     ( Responsive(..), _Responsive
@@ -67,14 +67,16 @@ data NarrowLayoutParams = NarrowLayoutParams
 Lens.makeLenses ''NarrowLayoutParams
 
 data Renderings a = Renderings
-    { _rWide :: a
-    , _rWideDisambig :: a
-    , _rNarrow :: NarrowLayoutParams -> a
+    { _rWide :: WithTextPos a
+    , _rWideDisambig :: WithTextPos a
+    , _rNarrow :: NarrowLayoutParams -> WithTextPos a
     } deriving stock (Functor, Generic, Generic1)
-    deriving Applicative via Generically1 Renderings
 Lens.makeLenses ''Renderings
 
-newtype Responsive f = Responsive (Renderings (TextWidget f))
+sameRenderings :: WithTextPos a -> Renderings a
+sameRenderings x = Renderings x x (pure x)
+
+newtype Responsive f = Responsive (Renderings (Widget f))
 Lens.makePrisms ''Responsive
 
 adjustNarrowLayoutParams ::
@@ -157,7 +159,7 @@ fromAlignedWidget (Aligned a w) =
     WithTextPos (a ^. _2 * w ^. Element.height) w & fromWithTextPos
 
 fromWithTextPos :: TextWidget a -> Responsive a
-fromWithTextPos = Responsive . pure
+fromWithTextPos = Responsive . sameRenderings
 
 -- | Lifts a Widget into a 'Responsive' with an alignment point at the top left
 fromWidget :: Functor f => Widget f -> Responsive f

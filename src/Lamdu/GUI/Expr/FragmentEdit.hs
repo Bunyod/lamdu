@@ -12,7 +12,7 @@ import qualified GUI.Momentu.Glue as Glue
 import qualified GUI.Momentu.Hover as Hover
 import qualified GUI.Momentu.I18N as MomentuTexts
 import           GUI.Momentu.Rect (Rect(..))
-import           GUI.Momentu.Responsive (Responsive(..))
+import           GUI.Momentu.Responsive (Responsive(..), Renderings(..), rWide, rNarrow, rWideDisambig)
 import qualified GUI.Momentu.State as GuiState
 import qualified GUI.Momentu.Widget as Widget
 import qualified GUI.Momentu.Widgets.Menu as Menu
@@ -46,7 +46,11 @@ responsiveLiftA3 ::
     (TextWidget a -> TextWidget a -> TextWidget a -> TextWidget a) ->
     Responsive a -> Responsive a -> Responsive a -> Responsive a
 responsiveLiftA3 f (Responsive x) (Responsive y) (Responsive z) =
-    f <$> x <*> y <*> z & Responsive
+    Responsive Renderings
+    { _rWide = f (x ^. rWide) (y ^. rWide) (z ^. rWide)
+    , _rWideDisambig = f (x ^. rWideDisambig) (y ^. rWideDisambig) (z ^. rWideDisambig)
+    , _rNarrow = f <$> x ^. rNarrow <*> y ^. rNarrow <*> z ^. rNarrow
+    }
 
 fragmentDoc ::
     ( Has (MomentuTexts.Texts Text) env
