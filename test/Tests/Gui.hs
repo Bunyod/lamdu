@@ -12,7 +12,7 @@ import           GUI.Momentu.EventMap (Event(..))
 import qualified GUI.Momentu.EventMap as E
 import           GUI.Momentu.MetaKey (MetaKey(..), noMods)
 import           GUI.Momentu.Rect (Rect(..))
-import           GUI.Momentu.Responsive (Responsive)
+import           GUI.Momentu.Responsive (Responsive, _Responsive)
 import qualified GUI.Momentu.Responsive as Responsive
 import           GUI.Momentu.State (HasCursor(..), VirtualCursor(..))
 import qualified GUI.Momentu.State as GuiState
@@ -65,7 +65,8 @@ replExpr ::
 replExpr = Sugar.waRepl . Sugar.replExpr . hVal . Sugar._BinderExpr
 
 wideFocused :: Lens.Traversal' (Responsive f) (Widget.Surrounding -> Widget.Focused (f GuiState.Update))
-wideFocused = Responsive.rWide . Align.tValue . Widget.wState . Widget._StateFocused
+wideFocused =
+    _Responsive . Responsive.rWide . Align.tValue . Widget.wState . Widget._StateFocused
 
 makeGui ::
     HasCallStack =>
@@ -187,7 +188,7 @@ testFragmentSize =
         guiCursorElseWhere <- makeGui "" baseEnv
         unless (guiCursorOnFrag ^. sz == guiCursorElseWhere ^. sz) (fail "fragment size inconsistent")
     where
-        sz = Responsive.rWide . Align.tValue . Element.size
+        sz = _Responsive . Responsive.rWide . Align.tValue . Element.size
 
 -- | Test for issue #375
 -- https://trello.com/c/KFLJPNmO/375-operator-precedence-crosses-lambda-boundaries-add-test
@@ -360,9 +361,9 @@ programTest baseEnv filename =
     testProgram filename $
     do
         baseGui <- makeGui "" baseEnv
-        let size = baseGui ^. Responsive.rWide . Align.tValue . Widget.wSize
+        let size = baseGui ^. _Responsive . Responsive.rWide . Align.tValue . Widget.wSize
         let narrowSize =
-                (baseGui ^. Responsive.rNarrow) (Responsive.NarrowLayoutParams 0 False)
+                (baseGui ^. _Responsive . Responsive.rNarrow) (Responsive.NarrowLayoutParams 0 False)
                 ^. Align.tValue . Widget.wSize
         when (size ^. _1 < narrowSize ^. _1) (fail "wide size is narrower than narrow!")
         w <- focusedWidget baseGui & either fail pure

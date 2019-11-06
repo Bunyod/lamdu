@@ -19,10 +19,12 @@
 -- of a vertically laid out parent will not use parentheses as the
 -- hierarchy is already clear in the layout itself.
 
-{-# LANGUAGE TemplateHaskell, FlexibleInstances, MultiParamTypeClasses, TypeFamilies, UndecidableInstances #-}
+{-# LANGUAGE TemplateHaskell, FlexibleInstances, MultiParamTypeClasses, TypeFamilies, UndecidableInstances, DerivingVia #-}
 
 module GUI.Momentu.Responsive
-    ( Responsive(..), rWide, rWideDisambig, rNarrow
+    ( Responsive(..), _Responsive
+
+    , Renderings(..), rWide, rWideDisambig, rNarrow
 
     -- * Layout params
     , NarrowLayoutParams(..), layoutWidth, layoutNeedDisambiguation
@@ -64,12 +66,16 @@ data NarrowLayoutParams = NarrowLayoutParams
     }
 Lens.makeLenses ''NarrowLayoutParams
 
-data Responsive f = Responsive
-    { _rWide :: TextWidget f
-    , _rWideDisambig :: TextWidget f
-    , _rNarrow :: NarrowLayoutParams -> TextWidget f
-    }
-Lens.makeLenses ''Responsive
+data Renderings a = Renderings
+    { _rWide :: a
+    , _rWideDisambig :: a
+    , _rNarrow :: NarrowLayoutParams -> a
+    } deriving stock (Functor, Generic, Generic1)
+    deriving Applicative via Generically1 Renderings
+Lens.makeLenses ''Renderings
+
+newtype Responsive f = Responsive (Renderings (TextWidget f))
+Lens.makePrisms ''Responsive
 
 adjustNarrowLayoutParams ::
     SizedElement v =>
@@ -82,8 +88,8 @@ instance
     , SizedElement b
     ) => Glue env (Responsive a) (WithTextPos b) where
     type Glued (Responsive a) (WithTextPos b) = Responsive a
-    glue env orientation l v =
-        Responsive
+    glue env orientation (Responsive l) v =
+        Responsive Renderings
         { _rWide = glue env orientation wide v
         , _rWideDisambig = glue env orientation wide v
         , _rNarrow =
@@ -102,8 +108,8 @@ instance
     , SizedElement a
     ) => Glue env (WithTextPos a) (Responsive b) where
     type Glued (WithTextPos a) (Responsive b) = Responsive b
-    glue env orientation v l =
-        Responsive
+    glue env orientation v (Responsive l) =
+        Responsive Renderings
         { _rWide = glue env orientation v wide
         , _rWideDisambig = glue env orientation v wide
         , _rNarrow =
@@ -120,10 +126,10 @@ instance
 instance Functor f => Element (Responsive f) where
     setLayers = Widget.widget . Element.setLayers
     hoverLayers = Widget.widget %~ Element.hoverLayers
-    empty = Responsive Element.empty Element.empty (const Element.empty)
+    empty = Renderings Element.empty Element.empty (const Element.empty) & Responsive
     scale = error "Responsive: scale not Implemented"
-    padImpl topLeft bottomRight w =
-        Responsive
+    padImpl topLeft bottomRight (Responsive w) =
+        Responsive Renderings
         { _rWide = w ^. rWide & Element.padImpl topLeft bottomRight
         , _rWideDisambig = w ^. rWideDisambig & Element.padImpl topLeft bottomRight
         , _rNarrow =
@@ -138,11 +144,12 @@ alignedWidget ::
     Lens.Setter
     (Responsive a) (Responsive b)
     (TextWidget a) (TextWidget b)
-alignedWidget f (Responsive w wd n) =
-    Responsive
+alignedWidget f (Responsive (Renderings w wd n)) =
+    Renderings
     <$> f w
     <*> f wd
     <*> Lens.mapped f n
+    <&> Responsive
 
 -- | Lifts a Widget into a 'Responsive'
 fromAlignedWidget :: Functor f => Aligned (Widget f) -> Responsive f
@@ -150,7 +157,7 @@ fromAlignedWidget (Aligned a w) =
     WithTextPos (a ^. _2 * w ^. Element.height) w & fromWithTextPos
 
 fromWithTextPos :: TextWidget a -> Responsive a
-fromWithTextPos x = Responsive x x (const x)
+fromWithTextPos = Responsive . pure
 
 -- | Lifts a Widget into a 'Responsive' with an alignment point at the top left
 fromWidget :: Functor f => Widget f -> Responsive f
@@ -180,12 +187,12 @@ Lens.makeLenses ''VerticalLayout
 
 verticalLayout :: Functor t => VerticalLayout t a -> t (Responsive a) -> Responsive a
 verticalLayout vert items =
-    Responsive
+    Responsive Renderings
     { _rWide = wide
     , _rWideDisambig = wide
     , _rNarrow =
         \layoutParams ->
-        let onItem params item =
+        let onItem params (Responsive item) =
                 (item ^. rNarrow)
                 NarrowLayoutParams
                 { _layoutNeedDisambiguation = params ^. layoutNeedDisambiguation
@@ -195,7 +202,7 @@ verticalLayout vert items =
         (vert ^. vLayout) (items & Lens.cloneIndexedTraversal (vert ^. vContexts) %@~ onItem)
     }
     where
-        wide = (vert ^. vLayout) (items <&> (^. rWide))
+        wide = (vert ^. vLayout) (items <&> (^. _Responsive . rWide))
 
 -- | Vertical box with the alignment point from the top widget
 vbox ::
@@ -257,8 +264,8 @@ vboxWithSeparator =
 vertLayoutMaybeDisambiguate ::
     (Responsive a -> Responsive a) -> Responsive a -> Responsive a
 vertLayoutMaybeDisambiguate disamb vert =
-    vert & rNarrow .~
+    vert & _Responsive . rNarrow .~
     \layoutParams ->
     if layoutParams ^. layoutNeedDisambiguation
-    then (disamb vert ^. rNarrow) layoutParams
-    else (vert ^. rNarrow) layoutParams
+    then (disamb vert ^. _Responsive . rNarrow) layoutParams
+    else (vert ^. _Responsive . rNarrow) layoutParams

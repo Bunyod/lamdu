@@ -18,7 +18,7 @@ import qualified GUI.Momentu.Direction as Dir
 import qualified GUI.Momentu.Draw as Draw
 import qualified GUI.Momentu.Element as Element
 import qualified GUI.Momentu.Glue as Glue
-import           GUI.Momentu.Responsive (Responsive)
+import           GUI.Momentu.Responsive (Responsive, _Responsive)
 import qualified GUI.Momentu.Responsive as Responsive
 import qualified GUI.Momentu.Responsive.Options as Options
 import           GUI.Momentu.View (View)
@@ -68,8 +68,7 @@ indent =
     do
         bWidth <- totalBarWidth
         let reduceWidth =
-                Responsive.rNarrow . Lens.argument .
-                Responsive.layoutWidth
+                _Responsive . Responsive.rNarrow . Lens.argument . Responsive.layoutWidth
                 -~ bWidth
         makeBar <- indentBar
         (|||) <- Glue.mkGlue ?? Glue.Horizontal

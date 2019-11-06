@@ -16,6 +16,7 @@ import           GUI.Momentu.MetaKey (MetaKey(..))
 import qualified GUI.Momentu.MetaKey as MetaKey
 import           GUI.Momentu.Rect (Rect(Rect))
 import qualified GUI.Momentu.Rect as Rect
+import           GUI.Momentu.Responsive (_Responsive)
 import qualified GUI.Momentu.Responsive as Responsive
 import qualified GUI.Momentu.Responsive.Options as Options
 import           GUI.Momentu.State (GUIState(..), VirtualCursor(..))
@@ -161,7 +162,7 @@ verticalDisambigTest =
             where
                 size = rendered ^. Align.tValue . W.wSize
                 rendered =
-                    (box ^. Responsive.rNarrow)
+                    (box ^. _Responsive . Responsive.rNarrow)
                     Responsive.NarrowLayoutParams
                     { Responsive._layoutWidth = 1.9
                     , Responsive._layoutNeedDisambiguation = needDisamb
@@ -170,7 +171,8 @@ verticalDisambigTest =
                     Options.box env disambig [unitItem, unitItem]
                     &
                         -- to avoid ambiguous type var
-                        Responsive.rWide . Align.tValue . W.wState . Lens.mapped %~ (<>[])
+                        _Responsive . Responsive.rWide . Align.tValue .
+                        W.wState . Lens.mapped %~ (<>[])
         unitItem =
             Element.pad Dir.LeftToRight 0 1 Element.empty
         disambig =

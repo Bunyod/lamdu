@@ -19,8 +19,8 @@ import qualified GUI.Momentu.Align as Align
 import qualified GUI.Momentu.Element as Element
 import qualified GUI.Momentu.Glue as Glue
 import           GUI.Momentu.Responsive
-    ( Responsive(..)
-    , rWide, rWideDisambig, rNarrow
+    ( Responsive(..), _Responsive
+    , Renderings(..), rWide, rWideDisambig, rNarrow
     , layoutWidth, vbox, fromView, vertLayoutMaybeDisambiguate
     )
 import qualified GUI.Momentu.Widget as Widget
@@ -46,21 +46,21 @@ Lens.makeLenses ''WideLayoutOption
 
 tryWideLayout :: WideLayoutOption t a -> t (Responsive a) -> Responsive a -> Responsive a
 tryWideLayout layoutOption elements fallback =
-    Responsive
+    Responsive Renderings
     { _rWide = wide
     , _rWideDisambig = res ^. lWideDisambig
     , _rNarrow =
         \layoutParams ->
         if wide ^. Align.tValue . Widget.wSize . _1 <= layoutParams ^. layoutWidth
         then wide
-        else (fallback ^. rNarrow) layoutParams
+        else (fallback ^. _Responsive . rNarrow) layoutParams
     }
     where
         wide = res ^. lWide
         res = (layoutOption ^. wLayout) renderedElements
         renderedElements =
             elements & Lens.cloneTraversal (layoutOption ^. wContexts) %~ takeWide
-        takeWide element =
+        takeWide (Responsive element) =
             WideLayouts
             { _lWide = element ^. rWide
             , _lWideDisambig = element ^. rWideDisambig

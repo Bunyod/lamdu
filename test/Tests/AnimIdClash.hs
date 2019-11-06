@@ -3,6 +3,7 @@ module Tests.AnimIdClash (test) where
 import qualified Control.Lens as Lens
 import           Control.Monad.Unit (Unit(..))
 import qualified GUI.Momentu.Align as Align
+import           GUI.Momentu.Responsive (_Responsive)
 import qualified GUI.Momentu.Responsive as Responsive
 import           GUI.Momentu.State (HasCursor(..))
 import qualified GUI.Momentu.View as View
@@ -87,7 +88,7 @@ testFragment =
                 & GuiM.run ExpressionEdit.make BinderEdit.make
                 Env.dummyAnchors env (const Unit)
                 & runIdentity
-        let widget = gui ^. Responsive.rWide . Align.tValue
+        let widget = gui ^. _Responsive . Responsive.rWide . Align.tValue
         case widget ^. Widget.wState of
             Widget.StateUnfocused{} -> fail "Expected focused widget"
             Widget.StateFocused mk ->

@@ -15,7 +15,7 @@ import qualified GUI.Momentu.EventMap as E
 import           GUI.Momentu.Glue ((/|/))
 import qualified GUI.Momentu.Glue as Glue
 import qualified GUI.Momentu.I18N as MomentuTexts
-import           GUI.Momentu.Responsive (Responsive)
+import           GUI.Momentu.Responsive (Responsive, _Responsive)
 import qualified GUI.Momentu.Responsive as Responsive
 import qualified GUI.Momentu.Responsive.Expression as ResponsiveExpr
 import qualified GUI.Momentu.Responsive.Options as Options
@@ -171,7 +171,7 @@ renderRows mParensId =
             \rows ->
             vbox (rows <&> vert)
             & Options.tryWideLayout table (Compose (prepareRows rows))
-            & Responsive.rWideDisambig %~ addParens
+            & _Responsive . Responsive.rWideDisambig %~ addParens
 
 make ::
     ( Monad i, Monad o

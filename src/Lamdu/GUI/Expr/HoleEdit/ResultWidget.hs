@@ -15,7 +15,7 @@ import qualified GUI.Momentu.EventMap as E
 import qualified GUI.Momentu.I18N as MomentuTexts
 import qualified GUI.Momentu.MetaKey as MetaKey
 import           GUI.Momentu.Rect (Rect(..))
-import           GUI.Momentu.Responsive (Responsive)
+import           GUI.Momentu.Responsive (Responsive, _Responsive)
 import qualified GUI.Momentu.Responsive as Responsive
 import qualified GUI.Momentu.State as GuiState
 import qualified GUI.Momentu.Widget as Widget
@@ -63,7 +63,7 @@ removeUnwanted =
     & E.deleteKeys
 
 applyResultLayout :: Responsive a -> TextWidget a
-applyResultLayout = (^. Responsive.rWide)
+applyResultLayout = (^. _Responsive . Responsive.rWide)
 
 makeWidget ::
     (Monad i, Monad o) =>

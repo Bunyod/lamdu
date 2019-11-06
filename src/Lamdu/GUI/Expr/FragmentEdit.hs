@@ -2,7 +2,6 @@ module Lamdu.GUI.Expr.FragmentEdit
     ( make
     ) where
 
-import           Control.Applicative (liftA3)
 import qualified Control.Lens as Lens
 import           GUI.Momentu.Align (TextWidget)
 import qualified GUI.Momentu.Align as Align
@@ -13,7 +12,7 @@ import qualified GUI.Momentu.Glue as Glue
 import qualified GUI.Momentu.Hover as Hover
 import qualified GUI.Momentu.I18N as MomentuTexts
 import           GUI.Momentu.Rect (Rect(..))
-import           GUI.Momentu.Responsive (Responsive(..), rWide, rWideDisambig, rNarrow)
+import           GUI.Momentu.Responsive (Responsive(..))
 import qualified GUI.Momentu.State as GuiState
 import qualified GUI.Momentu.Widget as Widget
 import qualified GUI.Momentu.Widgets.Menu as Menu
@@ -46,12 +45,8 @@ import           Lamdu.Prelude
 responsiveLiftA3 ::
     (TextWidget a -> TextWidget a -> TextWidget a -> TextWidget a) ->
     Responsive a -> Responsive a -> Responsive a -> Responsive a
-responsiveLiftA3 f x y z =
-    Responsive
-    { _rWide = f (x ^. rWide) (y ^. rWide) (z ^. rWide)
-    , _rWideDisambig = f (x ^. rWideDisambig) (y ^. rWideDisambig) (z ^. rWideDisambig)
-    , _rNarrow = liftA3 f (x ^. rNarrow) (y ^. rNarrow) (z ^. rNarrow)
-    }
+responsiveLiftA3 f (Responsive x) (Responsive y) (Responsive z) =
+    f <$> x <*> y <*> z & Responsive
 
 fragmentDoc ::
     ( Has (MomentuTexts.Texts Text) env
