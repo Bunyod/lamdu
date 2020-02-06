@@ -8,8 +8,11 @@ module Lamdu.GUI.Main
     ) where
 
 import qualified Control.Lens as Lens
+import           Control.Monad.Once (OnceT, _OnceT)
 import           Control.Monad.Reader (ReaderT(..))
 import qualified Control.Monad.Reader as Reader
+import           Control.Monad.Trans.State (mapStateT)
+import           Control.Monad.Transaction (MonadTransaction(..))
 import           Data.Property (Property)
 import qualified GUI.Momentu.Align as Align
 import           GUI.Momentu.Draw (Sprite)
@@ -87,18 +90,18 @@ layout ::
     Ctx env =>
     [TitledSelection Folder.Theme] -> [TitledSelection Folder.Language] ->
     Property IO Settings ->
-    ReaderT env (T DbM) (Widget (IOTrans DbM))
+    ReaderT env (OnceT (T DbM)) (Widget (IOTrans DbM))
 layout themeNames langNames settingsProp =
     do
         vcActions <-
-            VersionControl.makeActions <&> VCActions.hoist IOTrans.liftTrans & lift
+            VersionControl.makeActions <&> VCActions.hoist IOTrans.liftTrans & transaction
         theTheme <- Lens.view has
         fullSize <- Lens.view (has . MainLoop.eWindowSize)
         state <- Lens.view has
         let viewToDb x = x & IOTrans.trans %~ VersionControl.runEvent state
         (gotoDefinition, codeEdit) <-
             CodeEdit.make DbLayout.codeAnchors DbLayout.guiAnchors (fullSize ^. _1)
-            & Reader.mapReaderT VersionControl.runAction
+            & Reader.mapReaderT (_OnceT %~ mapStateT VersionControl.runAction)
             <&> _1 %~ StatusBar.hoist viewToDb
             <&> _2 . Widget.updates %~ viewToDb
         statusBar <-
@@ -125,7 +128,7 @@ make ::
     Ctx env =>
     [TitledSelection Folder.Theme] -> [TitledSelection Folder.Language] ->
     Property IO Settings -> env ->
-    T DbM (Widget (IOTrans DbM))
+    OnceT (T DbM) (Widget (IOTrans DbM))
 make themeNames langNames settingsProp env =
     layout themeNames langNames settingsProp
     & GuiState.assignCursor mempty defaultCursor

@@ -12,6 +12,7 @@ module Lamdu.Sugar.Convert.Binder.Params
     ) where
 
 import qualified Control.Lens as Lens
+import           Control.Monad.Once (OnceT)
 import           Control.Monad.Transaction (getP, setP)
 import qualified Data.List.Extended as List
 import qualified Data.Map as Map
@@ -56,8 +57,8 @@ type T = Transaction
 data ConventionalParams m = ConventionalParams
     { cpTags :: Set T.Tag
     , _cpParamInfos :: Map T.Tag ConvertM.TagFieldParam
-    , _cpParams :: Maybe (BinderParams InternalName (T m) (T m))
-    , _cpAddFirstParam :: AddFirstParam InternalName (T m) (T m)
+    , _cpParams :: Maybe (BinderParams InternalName (OnceT (T m)) (T m))
+    , _cpAddFirstParam :: AddFirstParam InternalName (OnceT (T m)) (T m)
     , cpScopes :: BinderBodyScope
     , cpMLamParam :: Maybe ({- lambda's -}EntityId, V.Var)
     }
@@ -308,7 +309,7 @@ fieldParamActions ::
     Monad m =>
     Maybe (MkProperty' (T m) PresentationMode) ->
     BinderKind m -> [T.Tag] -> FieldParam -> StoredLam m ->
-    ConvertM m (FuncParamActions InternalName (T m) (T m))
+    ConvertM m (FuncParamActions InternalName (OnceT (T m)) (T m))
 fieldParamActions mPresMode binderKind tags fp storedLam =
     do
         postProcess <- ConvertM.postProcessAssert
@@ -596,7 +597,7 @@ lamParamType lamExprPl =
 makeNonRecordParamActions ::
     Monad m =>
     BinderKind m -> StoredLam m ->
-    ConvertM m (FuncParamActions InternalName (T m) (T m))
+    ConvertM m (FuncParamActions InternalName (OnceT (T m)) (T m))
 makeNonRecordParamActions binderKind storedLam =
     do
         del <- makeDeleteLambda binderKind storedLam
@@ -632,7 +633,7 @@ mkVarInfo (Ann _ (TInst (TId name tid) _)) = VarNominal tid (name ^. inTag)
 mkFuncParam ::
     Monad m =>
     EntityId -> Input.Payload m a # V.Term -> info ->
-    ConvertM m (FuncParam InternalName (T m), info)
+    ConvertM m (FuncParam InternalName (OnceT (T m)), info)
 mkFuncParam entityId lamExprPl info =
     (,)
     <$> Lens.view ConvertM.scAnnotationsMode
@@ -658,7 +659,8 @@ mkFuncParam entityId lamExprPl info =
         typ = lamParamType lamExprPl
 
 convertNonRecordParam ::
-    Monad m => BinderKind m ->
+    Monad m =>
+    BinderKind m ->
     V.TypedLam V.Var (HCompose Prune T.Type) V.Term # Ann (Input.Payload m a) ->
     Input.Payload m a # V.Term ->
     ConvertM m (ConventionalParams m)

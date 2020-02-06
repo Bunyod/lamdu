@@ -1,4 +1,4 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving, ScopedTypeVariables, TemplateHaskell #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving, ScopedTypeVariables, TemplateHaskell, StandaloneDeriving #-}
 
 module Control.Monad.Once
     ( MonadOnce(..)
@@ -33,6 +33,9 @@ instance MonadOnce IO where
 
 newtype OnceT m a = OnceT (StateT (Sequence.Seq Dynamic) m a)
     deriving newtype (Functor, Applicative, Monad, MonadTrans)
+
+instance (Semigroup a, Monad m) => Semigroup (OnceT m a) where
+    a <> b = (<>) <$> a <*> b
 
 Lens.makePrisms ''OnceT
 

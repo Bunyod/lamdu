@@ -10,6 +10,7 @@ module Lamdu.Sugar.Internal
     ) where
 
 import qualified Control.Lens as Lens
+import           Control.Monad.Once (OnceT)
 import           Control.Monad.Transaction (MonadTransaction, getP)
 import           Data.UUID.Types (UUID)
 import           Hyper
@@ -31,7 +32,7 @@ type T = Transaction
 data ConvertPayload m a = ConvertPayload
     { -- Stored of top-level subtree for sugar expression subtree
       _pInput :: Input.Payload m a # Term
-    , _pActions :: NodeActions InternalName (T m) (T m)
+    , _pActions :: NodeActions InternalName (OnceT (T m)) (T m)
     }
 
 -- | Tags have internal names.
@@ -80,7 +81,7 @@ nameWithContext param tag =
 taggedName :: (MonadTransaction n m, UniqueId.ToUUID a) => a -> m InternalName
 taggedName x = Anchors.assocTag x & getP <&> nameWithContext x
 
-type ExpressionU m a = Expression InternalName (T m) (T m) (ConvertPayload m a)
+type ExpressionU m a = Expression InternalName (OnceT (T m)) (T m) (ConvertPayload m a)
 
 replaceWith ::
     Monad m =>

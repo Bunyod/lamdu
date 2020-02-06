@@ -15,6 +15,7 @@ import           Control.Applicative (Alternative(..))
 import qualified Control.Lens as Lens
 import           Control.Monad ((>=>), filterM)
 import           Control.Monad.ListT (ListT)
+import           Control.Monad.Once (OnceT, _OnceT)
 import           Control.Monad.State (State, StateT(..), mapStateT, evalState, state)
 import qualified Control.Monad.State as State
 import           Control.Monad.Transaction (transaction)
@@ -88,7 +89,7 @@ type Preconversion m a =
     Ann (Input.Payload m a) # V.Term ->
     Ann (Input.Payload m ()) # V.Term
 
-type ResultGen m = StateT InferState (ListT (T m))
+type ResultGen m = StateT InferState (ListT (OnceT (T m)))
 
 convert ::
     (Monad m, Monoid a) =>
@@ -121,7 +122,7 @@ mkOption ::
     Monad m =>
     ConvertM.Context m -> ResultProcessor m ->
     Input.Payload m a # V.Term -> Val () ->
-    HoleOption InternalName (T m) (T m)
+    HoleOption InternalName (OnceT (T m)) (T m)
 mkOption sugarContext resultProcessor holePl x =
     HoleOption
     { _hoEntityId =
@@ -138,7 +139,7 @@ mkHoleSuggesteds ::
     Monad m =>
     ConvertM.Context m -> ResultProcessor m ->
     Input.Payload m a # V.Term ->
-    [(Val (), HoleOption InternalName (T m) (T m))]
+    [(Val (), HoleOption InternalName (OnceT (T m)) (T m))]
 mkHoleSuggesteds sugarContext resultProcessor holePl =
     holePl ^. Input.inferredTypeUVar
     & Completions.suggestForType
@@ -217,7 +218,7 @@ mkOptions ::
     Monad m =>
     ConvertM.PositionInfo -> ResultProcessor m ->
     Input.Payload m a # V.Term ->
-    ConvertM m (T m [(Val (), HoleOption InternalName (T m) (T m))])
+    ConvertM m (OnceT (T m) [(Val (), HoleOption InternalName (OnceT (T m)) (T m))])
 mkOptions posInfo resultProcessor holePl =
     Lens.view id
     <&>
@@ -243,6 +244,7 @@ mkOptions posInfo resultProcessor holePl =
             <&> (\x -> (x, mkOption sugarContext resultProcessor holePl x))
             & addWithoutDups (mkHoleSuggesteds sugarContext resultProcessor holePl)
             & pure
+    & lift
 
 -- TODO: Generalize into a separate module?
 loadDeps :: Monad m => [V.Var] -> [T.NominalId] -> T m Deps
@@ -340,7 +342,7 @@ loadInfer sugarContext scope v =
 sugar ::
     (Monad m, Monoid a) =>
     ConvertM.Context m -> Input.Payload m dummy # V.Term -> Val a ->
-    T m (Annotated (Payload InternalName (T m) (T m) a) (Binder InternalName (T m) (T m)))
+    OnceT (T m) (Annotated (Payload InternalName (OnceT (T m)) (T m) a) (Binder InternalName (OnceT (T m)) (T m)))
 sugar sugarContext holePl v =
     do
         (val, inferCtx) <-
@@ -360,7 +362,7 @@ sugar sugarContext holePl v =
                     & Input.initScopes topLevelScope (holePl ^. Input.localsInScope)
                 , inferCtx
                 )
-            ) & transaction
+            ) & transaction & lift
         convertBinder val
             <&> hflipped %~ hmap (const (Lens._Wrapped %~ (,) neverShowAnnotations))
             >>= htraverseFlipped (const (Lens._Wrapped convertPayload))
@@ -475,7 +477,7 @@ mkResultVals ::
 mkResultVals sugarContext scope seed =
     -- TODO: This uses state from context but we're in StateT.
     -- This is a mess..
-    loadInfer sugarContext scope seed & txn
+    loadInfer sugarContext scope seed & txn & lift
     >>=
     \case
     (_, Left{}) -> empty
@@ -494,7 +496,7 @@ mkResult ::
     Preconversion m a -> T m () ->
     Input.Payload m b # V.Term ->
     Ann ((Const a :*: Write m) :*: InferResult UVar) # V.Term ->
-    ConvertM m (T m (HoleResult InternalName (T m) (T m)))
+    ConvertM m (OnceT (T m) (HoleResult InternalName (OnceT (T m)) (T m)))
 mkResult preConversion updateDeps holePl x =
     do
         sugarContext <- Lens.view id
@@ -506,6 +508,7 @@ mkResult preConversion updateDeps holePl x =
             updateDeps
             writeResult preConversion (sugarContext ^. ConvertM.scInferContext)
                 (holePl ^. Input.stored) x
+            & lift
             <&> Input.initScopes
                     (holePl ^. Input.inferScope)
                         -- TODO: this is kind of wrong
@@ -515,7 +518,7 @@ mkResult preConversion updateDeps holePl x =
                     (holePl ^. Input.localsInScope)
             <&> (convertBinder >=> htraverseFlipped (const (Lens._Wrapped convertPayload)) . (hflipped %~ hmap (const (Lens._Wrapped %~ (,) showAnn))))
             >>= ConvertM.run (sugarContext & ConvertM.scAnnotationsMode .~ Annotations.None)
-            & Transaction.fork
+            & _OnceT %~ mapStateT (fmap (\((fConverted, s), forkedChanges) -> ((fConverted, forkedChanges), s)) . Transaction.fork)
             <&>
             ( \(fConverted, forkedChanges) ->
                 HoleResult
@@ -536,7 +539,7 @@ toScoredResults ::
     Input.Payload m dummy # V.Term ->
     StateT InferState f (Deps, Ann ((Const a :*: Write m) :*: InferResult UVar) # V.Term) ->
     f ( HoleResultScore
-      , T m (HoleResult InternalName (T m) (T m))
+      , OnceT (T m) (HoleResult InternalName (OnceT (T m)) (T m))
       )
 toScoredResults emptyPl preConversion sugarContext holePl act =
     act
@@ -574,9 +577,9 @@ mkResults ::
     Monad m =>
     ResultProcessor m -> ConvertM.Context m ->
     Input.Payload m dummy # V.Term -> Val () ->
-    ListT (T m)
+    ListT (OnceT (T m))
     ( HoleResultScore
-    , T m (HoleResult InternalName (T m) (T m))
+    , OnceT (T m) (HoleResult InternalName (OnceT (T m)) (T m))
     )
 mkResults (ResultProcessor emptyPl postProcess preConversion) sugarContext holePl base =
     mkResultVals sugarContext (holePl ^. Input.inferScope) base

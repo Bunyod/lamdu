@@ -3,6 +3,7 @@
 module Lamdu.Sugar.Convert.IfElse (convertIfElse) where
 
 import qualified Control.Lens as Lens
+import           Control.Monad.Once (OnceT)
 import           Hyper.Type.AST.Nominal (nId)
 import           Lamdu.Builtins.Anchors (boolTid, trueTag, falseTag)
 import qualified Lamdu.Calc.Type as T
@@ -21,8 +22,8 @@ type T = Transaction
 convertIfElse ::
     Functor m =>
     (ValI m -> T m (ValI m)) ->
-    Case InternalName (T m) (T m) # Ann (Const (ConvertPayload m a)) ->
-    Maybe (IfElse InternalName (T m) (T m) # Ann (Const (ConvertPayload m a)))
+    Case InternalName (OnceT (T m)) (T m) # Ann (Const (ConvertPayload m a)) ->
+    Maybe (IfElse InternalName (OnceT (T m)) (T m) # Ann (Const (ConvertPayload m a)))
 convertIfElse setToVal caseBody =
     do
         arg <- caseBody ^? cKind . _CaseWithArg . caVal

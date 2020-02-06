@@ -5,6 +5,7 @@ module Lamdu.GUI.CodeEdit.Load
     ) where
 
 import qualified Control.Lens as Lens
+import           Control.Monad.Once (OnceT)
 import           Data.CurAndPrev (CurAndPrev(..))
 import qualified GUI.Momentu.Direction as Dir
 import qualified Lamdu.Annotations as Annotations
@@ -54,14 +55,14 @@ loadWorkArea ::
     , Monad m
     ) =>
     env -> Anchors.CodeAnchors m ->
-    T m
-    (Sugar.WorkArea Name (T m) (T m)
-        (Sugar.Payload Name (T m) (T m) ExprGui.Payload))
+    OnceT (T m)
+    (Sugar.WorkArea Name (OnceT (T m)) (T m)
+        (Sugar.Payload Name (OnceT (T m)) (T m) ExprGui.Payload))
 loadWorkArea env cp =
     SugarConvert.loadWorkArea env cp
     >>= report .
         AddNames.addToWorkArea env
-        (fmap (Tag.getTagName env) . ExprIRef.readTagData)
+        (fmap (Tag.getTagName env) . (lift . ExprIRef.readTagData))
     <&> AddParens.addToWorkArea
     <&> Lens.mapped %~ toGuiMPayload
     where

@@ -9,6 +9,7 @@ import           Control.Concurrent.MVar
 import           Control.DeepSeq (deepseq)
 import qualified Control.Exception as E
 import qualified Control.Lens as Lens
+import           Control.Monad.Once (OnceT)
 import           Control.Monad.Trans.FastWriter (evalWriterT)
 import qualified Data.Aeson.Config as AesonConfig
 import           Data.CurAndPrev (current)
@@ -219,7 +220,7 @@ makeMainGui ::
     HasCallStack =>
     [TitledSelection Folder.Theme] -> [TitledSelection Folder.Language] ->
     (forall a. T DbLayout.DbM a -> IO a) ->
-    Env -> T DbLayout.DbM (Widget IO)
+    Env -> OnceT (T DbLayout.DbM) (Widget IO)
 makeMainGui themeNames langNames dbToIO env =
     GUIMain.make themeNames langNames (env ^. Env.settings) env
     <&> Widget.updates %~
