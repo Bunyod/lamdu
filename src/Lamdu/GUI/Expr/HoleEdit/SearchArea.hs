@@ -81,7 +81,7 @@ fdConfig env = FocusDelegator.Config
 
 makeRenderedResult ::
     (Monad i, Monad o, Has (MomentuTexts.Texts Text) env) =>
-    Sugar.Payload v name i o ExprGui.Payload -> SearchMenu.ResultsContext ->
+    Sugar.Payload val name i o ExprGui.Payload -> SearchMenu.ResultsContext ->
     Result i o ->
     GuiM env i o (Menu.RenderedOption o)
 makeRenderedResult pl ctx result =
@@ -111,7 +111,7 @@ postProcessSugar minOpPrec binder =
 
 makeResultOption ::
     (Monad i, Monad o, Has (MomentuTexts.Texts Text) env) =>
-    Sugar.Payload v name i o ExprGui.Payload -> SearchMenu.ResultsContext ->
+    Sugar.Payload val name i o ExprGui.Payload -> SearchMenu.ResultsContext ->
     ResultGroup i o -> Menu.Option (GuiM env i o) o
 makeResultOption pl ctx results =
     Menu.Option
@@ -166,7 +166,7 @@ make ::
     ) =>
     AnnotationMode ->
     i [Sugar.HoleOption (Sugar.EvaluationScopes Name i) Name i o] ->
-    Sugar.Payload (Sugar.EvaluationScopes Name i) Name i o ExprGui.Payload ->
+    Sugar.Payload (Sugar.EvaluationScopes Name i Sugar.EvalValues) Name i o ExprGui.Payload ->
     (Text -> Bool) -> WidgetIds ->
     GuiM env i o (Menu.Placement -> TextWidget o)
 make annMode mkOptions pl allowedTerms widgetIds =

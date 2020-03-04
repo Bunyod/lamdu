@@ -170,22 +170,24 @@ toResVal = resBody (toResBody toResVal)
 
 toValAnnotation ::
     MonadNaming m =>
-    EvaluationScopes (OldName m) (IM m) -> m (EvaluationScopes (NewName m) (IM m))
-toValAnnotation evalRes =
+    EvaluationScopes (OldName m) (IM m) EvalValues ->
+    m (EvaluationScopes (NewName m) (IM m) EvalValues)
+toValAnnotation (EvaluationScopes evalRes) =
     opRun <&>
     \run ->
     evalRes <&> traverse . traverse %~ (>>= run . toResVal)
+    & EvaluationScopes
 
 toAnnotation ::
     MonadNaming m =>
-    Annotation (EvaluationScopes (OldName m) (IM m)) (OldName m) ->
-    m (Annotation (EvaluationScopes (NewName m) (IM m)) (NewName m))
+    Annotation (EvaluationScopes (OldName m) (IM m) EvalValues) (OldName m) ->
+    m (Annotation (EvaluationScopes (NewName m) (IM m) EvalValues) (NewName m))
 toAnnotation AnnotationNone = pure AnnotationNone
 toAnnotation (AnnotationType typ) = toType typ <&> AnnotationType
 toAnnotation (AnnotationVal x) = toValAnnotation x <&> AnnotationVal
 
-type OldPayload m = Payload (EvaluationScopes (OldName m) (IM m)) (OldName m) (IM m)
-type NewPayload m = Payload (EvaluationScopes (NewName m) (IM m)) (NewName m) (IM m)
+type OldPayload m = Payload (EvaluationScopes (OldName m) (IM m) EvalValues) (OldName m) (IM m)
+type NewPayload m = Payload (EvaluationScopes (NewName m) (IM m) EvalValues) (NewName m) (IM m)
 
 toPayload :: MonadNaming m => OldPayload m o a -> m (NewPayload m o a)
 toPayload payload@Payload{_plAnnotation, _plActions} =
@@ -471,8 +473,8 @@ withParamInfo varInfo (ParamInfo tag fpActions) =
 withFuncParam ::
     MonadNaming m =>
     (Sugar.VarInfo -> a -> CPS m b) ->
-    (FuncParam (EvaluationScopes (OldName m) (IM m)) (OldName m), a) ->
-    CPS m (FuncParam (EvaluationScopes (NewName m) (IM m)) (NewName m), b)
+    (FuncParam (EvaluationScopes (OldName m) (IM m) EvalValues) (OldName m), a) ->
+    CPS m (FuncParam (EvaluationScopes (NewName m) (IM m) EvalValues) (NewName m), b)
 withFuncParam f (FuncParam pl varInfo, info) =
     (,)
     <$>
@@ -483,8 +485,8 @@ withFuncParam f (FuncParam pl varInfo, info) =
 
 withBinderParams ::
     MonadNaming m =>
-    BinderParams (EvaluationScopes (OldName m) (IM m)) (OldName m) (IM m) o ->
-    CPS m (BinderParams (EvaluationScopes (NewName m) (IM m)) (NewName m) (IM m) o)
+    BinderParams (EvaluationScopes (OldName m) (IM m) EvalValues) (OldName m) (IM m) o ->
+    CPS m (BinderParams (EvaluationScopes (NewName m) (IM m) EvalValues) (NewName m) (IM m) o)
 withBinderParams (NullParam x) = withFuncParam (const pure) x <&> NullParam
 withBinderParams (Params xs) = traverse (withFuncParam withParamInfo) xs <&> Params
 

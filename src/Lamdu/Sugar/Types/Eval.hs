@@ -1,8 +1,9 @@
 -- | Sugared evaluation results
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell, GADTs #-}
 module Lamdu.Sugar.Types.Eval
     ( EvalScopes
-    , ChildScopes, ParamScopes, EvaluationScopes
+    , ChildScopes, ParamScopes
+    , EvaluationScopes(..)
     , ScopeId
     , ER.EvalTypeError(..)
     , ER.CompiledErrorType(..)
@@ -20,6 +21,7 @@ module Lamdu.Sugar.Types.Eval
     , _RRecord, _RInject, _RFunc, _RArray, _RError, _RBytes, _RFloat
     , _RList, _RTree, _RText
     , ResVal(..), resPayload, resBody
+    , EvalValues
     ) where
 
 import qualified Control.Lens as Lens
@@ -84,6 +86,10 @@ type ChildScopes = EvalScopes ScopeId
 
 type ParamScopes = EvalScopes [BinderParamScopeId]
 
+-- Tags for eval GADT
+data EvalValues
+-- data EvalBinderBodyScope
+
 -- For parameters: if there were any applies-of-lam in a parent scope,
 -- even if they got no values yet, it will be `Just mempty`, which
 -- will not fall back to showing the prev
@@ -92,7 +98,10 @@ type ParamScopes = EvalScopes [BinderParamScopeId]
 --
 -- Values are wrapped in an "i" action to avoid unnecessarily passing on all
 -- values during the names pass.
-type EvaluationScopes name i = CurAndPrev (Maybe (Map ScopeId (i (ResVal name))))
+data EvaluationScopes name i tag where
+    EvaluationScopes ::
+        CurAndPrev (Maybe (Map ScopeId (i (ResVal name)))) ->
+        EvaluationScopes name i EvalValues
 
 data EvalException o = EvalException
     { _evalExceptionType :: ER.Error

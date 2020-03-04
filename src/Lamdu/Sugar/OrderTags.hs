@@ -18,13 +18,13 @@ import           Lamdu.Prelude
 type OrderT m x = x -> m x
 
 class Order v name i o t where
-    order :: OrderT i (t # Annotated (Sugar.Payload v name i o a))
+    order :: OrderT i (t # Annotated (Sugar.Payload (v Sugar.EvalValues) name i o a))
 
     default order ::
         ( MonadTransaction m i, HTraversable t
         , HNodesConstraint t (Order v name i o)
         ) =>
-        OrderT i (t # Annotated (Sugar.Payload v name i o a))
+        OrderT i (t # Annotated (Sugar.Payload (v Sugar.EvalValues) name i o a))
     order = htraverse (Proxy @(Order v name i o) #> orderNode)
 
 orderByTag :: MonadTransaction m i => (a -> Sugar.Tag name) -> OrderT i [a]
@@ -91,7 +91,7 @@ instance MonadTransaction m i => Order v name i o (Sugar.Function v name i o) wh
 
 orderParams ::
     MonadTransaction m i =>
-    OrderT i [(Sugar.FuncParam v name, Sugar.ParamInfo name i o)]
+    OrderT i [(Sugar.FuncParam val name, Sugar.ParamInfo name i o)]
 orderParams xs =
     xs
     & (Lens.traversed . _1 . Sugar.fpAnnotation . Sugar._AnnotationType) orderType
@@ -130,7 +130,7 @@ instance MonadTransaction m i => Order v name i o (Sugar.Term v name i o) where
 
 orderNode ::
     (MonadTransaction m i, Order v name i o f) =>
-    OrderT i (Annotated (Sugar.Payload v name i o a) # f)
+    OrderT i (Annotated (Sugar.Payload (v Sugar.EvalValues) name i o a) # f)
 orderNode (Ann (Const a) x) =
     Ann
     <$> ((Sugar.plAnnotation . Sugar._AnnotationType) orderType a <&> Const)
@@ -138,7 +138,7 @@ orderNode (Ann (Const a) x) =
 
 orderDef ::
     MonadTransaction m i =>
-    OrderT i (Sugar.Definition v name i o (Sugar.Payload v name i o a))
+    OrderT i (Sugar.Definition v name i o (Sugar.Payload (v Sugar.EvalValues) name i o a))
 orderDef def =
     def
     & (SugarLens.defSchemes . Sugar.schemeType) orderType

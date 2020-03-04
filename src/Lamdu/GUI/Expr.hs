@@ -61,7 +61,7 @@ make e =
 
 placeHolder ::
     (Monad i, Applicative o) =>
-    Sugar.Payload v name i o ExprGui.Payload ->
+    Sugar.Payload val name i o ExprGui.Payload ->
     GuiM env i o (Responsive o)
 placeHolder pl =
     (Widget.makeFocusableView ?? WidgetIds.fromExprPayload pl <&> fmap)

@@ -130,7 +130,8 @@ applyEvent env virtCursor event =
 fromWorkArea ::
     Env -> Lens.ATraversal'
     (Sugar.WorkArea (Sugar.EvaluationScopes Name (T ViewM)) Name (T ViewM) (T ViewM)
-        (Sugar.Payload (Sugar.EvaluationScopes Name (T ViewM)) Name (T ViewM) (T ViewM) ExprGui.Payload)) a ->
+        (Sugar.Payload (Sugar.EvaluationScopes Name (T ViewM) Sugar.EvalValues)
+            Name (T ViewM) (T ViewM) ExprGui.Payload)) a ->
     T ViewM a
 fromWorkArea env path =
     convertWorkArea env <&> (fmap . fmap) (uncurry ExprGui.Payload)
@@ -216,16 +217,16 @@ workAreaEq ::
     forall a m v.
     Eq a =>
     Sugar.WorkArea v Name (T m) (T m)
-    (Sugar.Payload v Name (T m) (T m) a) ->
+    (Sugar.Payload (v Sugar.EvalValues) Name (T m) (T m) a) ->
     Sugar.WorkArea v Name (T m) (T m)
-    (Sugar.Payload v Name (T m) (T m) a) ->
+    (Sugar.Payload (v Sugar.EvalValues) Name (T m) (T m) a) ->
     Bool
 workAreaEq x y =
     x' == unsafeCoerce y
     where
         x' =
             unsafeCoerce x ::
-                Sugar.WorkArea () Name Unit Unit
+                Sugar.WorkArea (Const ()) Name Unit Unit
                 (Sugar.Payload () Name Unit Unit a)
 
 testKeyboardDirAndBack ::

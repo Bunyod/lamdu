@@ -55,13 +55,13 @@ defRef var tag =
     }
 
 node ::
-    h # Annotated (Sugar.Payload v InternalName Identity Unit ()) ->
-    Annotated (Sugar.Payload v InternalName Identity Unit ()) # h
+    h # Annotated (Sugar.Payload val InternalName Identity Unit ()) ->
+    Annotated (Sugar.Payload val InternalName Identity Unit ()) # h
 node = Const payload & Ann
 
 labeledApplyFunc ::
     Sugar.BinderVarRef InternalName Unit ->
-    Annotated (Sugar.Payload v InternalName Identity Unit ()) #
+    Annotated (Sugar.Payload val InternalName Identity Unit ()) #
     Const (Sugar.BinderVarRef InternalName Unit)
 labeledApplyFunc = node . Const
 
@@ -178,7 +178,7 @@ repl (Ann (Const pl) x) =
     }
 
 mkFuncParam ::
-    (UUID, T.Tag) -> (Sugar.FuncParam v name, Sugar.ParamInfo InternalName Identity Unit)
+    (UUID, T.Tag) -> (Sugar.FuncParam val name, Sugar.ParamInfo InternalName Identity Unit)
 mkFuncParam (paramVar, paramTag) =
     ( Sugar.FuncParam
         { Sugar._fpAnnotation = Sugar.AnnotationNone
@@ -224,7 +224,7 @@ numType =
     Sugar.TInst (Sugar.TId (taggedEntityName "numTid" "num") "num") mempty
     & Ann (Const "dummy")
 
-payload :: Sugar.Payload v InternalName Identity Unit ()
+payload :: Sugar.Payload val InternalName Identity Unit ()
 payload =
     Sugar.Payload
     { Sugar._plAnnotation = Sugar.AnnotationNone

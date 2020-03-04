@@ -183,7 +183,9 @@ makeAltsWidget ::
     ) =>
     Maybe Tag ->
     [Sugar.Body Sugar.CompositeItem (Sugar.EvaluationScopes Name i) Name i o ExprGui.Payload] ->
-    [ Annotated (Sugar.Payload (Sugar.EvaluationScopes Name i) Name i o ExprGui.Payload) #
+    [ Annotated
+        (Sugar.Payload
+            (Sugar.EvaluationScopes Name i Sugar.EvalValues) Name i o ExprGui.Payload) #
         Const (Sugar.GetVar Name o)
     ] ->
     Sugar.TagReplace Name i o Sugar.EntityId ->

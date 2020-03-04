@@ -7,6 +7,7 @@
 {-# LANGUAGE TemplateHaskell, TypeFamilies, MultiParamTypeClasses, UndecidableInstances, DataKinds, GADTs, ConstraintKinds, FlexibleInstances #-}
 module Lamdu.Sugar.Types.Expression
     ( Expr, Body
+    , EvalValues
     , Term(..)
         , _BodyLam, _BodyLabeledApply, _BodySimpleApply
         , _BodyGetVar, _BodyGetField, _BodyInject, _BodyHole
@@ -68,8 +69,8 @@ import           Lamdu.Sugar.Types.Type
 
 import           Lamdu.Prelude
 
-type Expr e v name i o a = Annotated (Payload v name i o a) # e v name i o
-type Body e v name i o a = e v name i o # Annotated (Payload v name i o a)
+type Expr e v name i o a = Annotated (Payload (v EvalValues) name i o a) # e v name i o
+type Body e v name i o a = e v name i o # Annotated (Payload (v EvalValues) name i o a)
 
 data AnnotatedArg v name i o k = AnnotatedArg
     { _aaTag :: Tag name
@@ -235,7 +236,7 @@ data Binder v name i o f
 
 data Function v name i o k = Function
     { _fChosenScopeProp :: i (Property o (Maybe BinderParamScopeId))
-    , _fParams :: BinderParams v name i o
+    , _fParams :: BinderParams (v EvalValues) name i o
     , _fBody :: k :# Binder v name i o
     , _fAddFirstParam :: AddFirstParam name i o
     , -- The scope inside a lambda

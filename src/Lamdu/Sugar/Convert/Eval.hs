@@ -1,5 +1,5 @@
 -- | Convert eval results
-
+{-# LANGUAGE GADTs #-}
 module Lamdu.Sugar.Convert.Eval
     ( results, param, completion
     ) where
@@ -191,15 +191,16 @@ entityIdForParam entityId (ER.ScopeId scopeId) =
 convertEvalResultsWith ::
     Applicative i =>
     (ScopeId -> EntityId) -> EvalScopes ERV ->
-    EvaluationScopes InternalName i
+    EvaluationScopes InternalName i EvalValues
 convertEvalResultsWith entityId evalResults =
     evalResults
     <&> Lens.imapped %@~ fmap pure . convertVal . entityId
     <&> nullToNothing
+    & EvaluationScopes
 
 results ::
     Applicative i =>
-    EntityId -> EvalScopes ERV -> EvaluationScopes InternalName i
+    EntityId -> EvalScopes ERV -> EvaluationScopes InternalName i EvalValues
 results = convertEvalResultsWith . entityIdForEvalResult
 
 -- | We flatten all the scopes the param received in ALL parent
@@ -208,7 +209,8 @@ results = convertEvalResultsWith . entityIdForEvalResult
 -- (deeply) nested scope
 param ::
     Applicative i =>
-    EntityId -> EvalScopes [(ScopeId, ERV)] -> EvaluationScopes InternalName i
+    EntityId -> EvalScopes [(ScopeId, ERV)] ->
+    EvaluationScopes InternalName i EvalValues
 param entityId evalResults =
     evalResults <&> (^.. Lens.folded . Lens.folded) <&> Map.fromList
     & convertEvalResultsWith (entityIdForParam entityId)

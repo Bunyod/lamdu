@@ -73,7 +73,10 @@ data Parts i o = Parts
     , pMScopesEdit :: Maybe (Widget o)
     , pBodyEdit :: Responsive o
     , pEventMap :: EventMap (o GuiState.Update)
-    , pMLamPayload :: Maybe (Sugar.Payload (Sugar.EvaluationScopes Name i) Name i o ExprGui.Payload)
+    , pMLamPayload ::
+        Maybe
+        (Sugar.Payload
+            (Sugar.EvaluationScopes Name i Sugar.EvalValues) Name i o ExprGui.Payload)
     , pRhsId :: Widget.Id
     }
 
@@ -276,7 +279,7 @@ makeParamsEdit ::
     ) =>
     Annotation.EvalAnnotationOptions ->
     Widget.Id -> Widget.Id -> Widget.Id ->
-    Sugar.BinderParams (Sugar.EvaluationScopes Name i) Name i o ->
+    Sugar.BinderParams (Sugar.EvaluationScopes Name i Sugar.EvalValues) Name i o ->
     GuiM env i o [Responsive o]
 makeParamsEdit annotationOpts delVarBackwardsId lhsId rhsId params =
     case params of
@@ -322,7 +325,7 @@ makeMParamsEdit ::
     Widget.Id -> Widget.Id ->
     Widget.Id ->
     Sugar.AddFirstParam Name i o ->
-    Maybe (Sugar.BinderParams (Sugar.EvaluationScopes Name i) Name i o) ->
+    Maybe (Sugar.BinderParams (Sugar.EvaluationScopes Name i Sugar.EvalValues) Name i o) ->
     GuiM env i o (Maybe (Responsive o))
 makeMParamsEdit mScopeCursor isScopeNavFocused delVarBackwardsId myId bodyId addFirstParam mParams =
     do

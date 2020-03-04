@@ -44,9 +44,9 @@ import           Lamdu.Prelude
 data FuncApplyLimit = UnlimitedFuncApply | AtMostOneFuncApply
     deriving (Eq, Ord, Generic)
 
-data Annotation v name
+data Annotation val name
     = AnnotationType (Annotated EntityId # Type name)
-    | AnnotationVal v
+    | AnnotationVal val
     | AnnotationNone
     deriving Generic
 
@@ -74,8 +74,8 @@ data ParamInfo name i o = ParamInfo
     , _piActions :: FuncParamActions name i o
     } deriving Generic
 
-data FuncParam v name = FuncParam
-    { _fpAnnotation :: Annotation v name
+data FuncParam val name = FuncParam
+    { _fpAnnotation :: Annotation val name
     , _fpVarInfo :: VarInfo
     } deriving Generic
 
@@ -110,12 +110,12 @@ data AddFirstParam name i o
     deriving Generic
 
 -- TODO: rename BinderParams -> Params
-data BinderParams v name i o
+data BinderParams val name i o
     = -- null param represents a lambda whose parameter's type is inferred
       -- to be the empty record.
       -- This is often used to represent "deferred execution"
-      NullParam (FuncParam v name, NullParamActions o)
-    | Params [(FuncParam v name, ParamInfo name i o)]
+      NullParam (FuncParam val name, NullParamActions o)
+    | Params [(FuncParam val name, ParamInfo name i o)]
     deriving Generic
 
 data VarInfo
@@ -123,8 +123,8 @@ data VarInfo
     | VarGeneric | VarFunction | VarRecord | VarVariant
     deriving (Generic, Eq)
 
-data Payload v name i o a = Payload
-    { _plAnnotation :: Annotation v name
+data Payload val name i o a = Payload
+    { _plAnnotation :: Annotation val name
     , _plNeverShrinkTypeAnnotations :: Bool
     , _plActions :: NodeActions name i o
     , _plEntityId :: EntityId

@@ -254,7 +254,8 @@ maybeAddAnnotationPl ::
     ( Monad i, Monad o, Glue.HasTexts env, Has (Texts.Code Text) env
     , Has (Texts.Name Text) env
     ) =>
-    Sugar.Payload (Sugar.EvaluationScopes Name i) Name i o1 ExprGui.Payload -> GuiM env i o (Widget o -> Widget o)
+    Sugar.Payload (Sugar.EvaluationScopes Name i Sugar.EvalValues) Name i o1 ExprGui.Payload ->
+    GuiM env i o (Widget o -> Widget o)
 maybeAddAnnotationPl pl =
     do
         postProcessAnnotation <-
@@ -270,7 +271,7 @@ maybeAddAnnotationPl pl =
 
 evaluationResult ::
     Monad i =>
-    Sugar.Payload (Sugar.EvaluationScopes name i) name i o ExprGui.Payload ->
+    Sugar.Payload (Sugar.EvaluationScopes name i Sugar.EvalValues) name i o ExprGui.Payload ->
     GuiM env i o (Maybe (Sugar.ResVal name))
 evaluationResult pl =
     do
@@ -285,7 +286,7 @@ data EvalAnnotationOptions
 
 getAnnotationMode ::
     Monad i =>
-    EvalAnnotationOptions -> Sugar.EvaluationScopes name i ->
+    EvalAnnotationOptions -> Sugar.EvaluationScopes name i Sugar.EvalValues ->
     GuiM env i o (Maybe (EvalResDisplay name, Maybe (NeighborVals (Maybe (EvalResDisplay name)))))
 getAnnotationMode opt ann =
     do
@@ -308,7 +309,7 @@ maybeAddAnnotationWith ::
     , Has (Texts.Code Text) env, Has (Texts.Name Text) env
     ) =>
     EvalAnnotationOptions -> PostProcessAnnotation (GuiM env i o) ->
-    Sugar.Annotation (Sugar.EvaluationScopes Name i) Name ->
+    Sugar.Annotation (Sugar.EvaluationScopes Name i Sugar.EvalValues) Name ->
     GuiM env i o (Widget o -> Widget o)
 maybeAddAnnotationWith opt postProcessAnnotation ann =
     case ann of
@@ -321,7 +322,7 @@ maybeAddValAnnotationWith ::
     , Has (Texts.Name Text) env
     ) =>
     EvalAnnotationOptions -> PostProcessAnnotation (GuiM env i o) ->
-    Sugar.EvaluationScopes Name i ->
+    Sugar.EvaluationScopes Name i Sugar.EvalValues ->
     GuiM env i o (Widget o -> Widget o)
 maybeAddValAnnotationWith opt postProcessAnnotation ann =
     getAnnotationMode opt ann
@@ -336,15 +337,15 @@ maybeAddAnnotation ::
     , Has (Texts.Name Text) env
     ) =>
     PostProcessAnnotation (GuiM env i o) ->
-    Sugar.Annotation (Sugar.EvaluationScopes Name i) Name ->
+    Sugar.Annotation (Sugar.EvaluationScopes Name i Sugar.EvalValues) Name ->
     GuiM env i o (Widget o -> Widget o)
 maybeAddAnnotation = maybeAddAnnotationWith NormalEvalAnnotation
 
 valOfScope ::
     Applicative i =>
-    Sugar.EvaluationScopes name i -> CurAndPrev (Maybe Sugar.ScopeId) ->
+    Sugar.EvaluationScopes name i Sugar.EvalValues -> CurAndPrev (Maybe Sugar.ScopeId) ->
     i (Maybe (EvalResDisplay name))
-valOfScope curPrevAnn mScopeIds =
+valOfScope (Sugar.EvaluationScopes curPrevAnn) mScopeIds =
     go
     <$> curPrevTag
     <*> curPrevAnn
@@ -358,6 +359,6 @@ valOfScope curPrevAnn mScopeIds =
 
 valOfScopePreferCur ::
     Applicative i =>
-    Sugar.EvaluationScopes name i -> Sugar.ScopeId ->
+    Sugar.EvaluationScopes name i Sugar.EvalValues -> Sugar.ScopeId ->
     i (Maybe (EvalResDisplay name))
 valOfScopePreferCur ann = valOfScope ann . pure . Just

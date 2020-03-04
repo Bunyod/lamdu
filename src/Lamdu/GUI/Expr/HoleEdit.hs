@@ -64,7 +64,9 @@ make ::
     , TextEdit.HasTexts env
     , SearchMenu.HasTexts env
     ) =>
-    Annotated (Sugar.Payload (Sugar.EvaluationScopes Name i) Name i o ExprGui.Payload) #
+    Annotated
+        (Sugar.Payload
+            (Sugar.EvaluationScopes Name i Sugar.EvalValues) Name i o ExprGui.Payload) #
         Const (Sugar.Hole (Sugar.EvaluationScopes Name i) Name i o) ->
     GuiM env i o (Responsive o)
 make (Ann (Const pl) (Const hole)) =

@@ -332,7 +332,8 @@ makeTypeAnnotation = convertType . EntityId.ofTypeOf
 makeAnnotation ::
     (Monad m, Applicative i) =>
     Ann.ShowAnnotation -> Input.Payload m a # V.Term ->
-    ConvertM m (Annotation (EvaluationScopes InternalName i) InternalName)
+    ConvertM m
+    (Annotation (EvaluationScopes InternalName i EvalValues) InternalName)
 makeAnnotation showAnn pl
     | showAnn ^. Ann.showTypeAlways = makeTypeAnnotationPl pl <&> AnnotationType
     | otherwise =
@@ -349,7 +350,8 @@ makeAnnotation showAnn pl
 convertPayload ::
     (Monad m, Applicative i) =>
     (Ann.ShowAnnotation, ConvertPayload m a) ->
-    ConvertM m (Payload (EvaluationScopes InternalName i) InternalName (T m) (T m) a)
+    ConvertM m
+    (Payload (EvaluationScopes InternalName i EvalValues) InternalName (T m) (T m) a)
 convertPayload (showAnn, pl) =
     makeAnnotation showAnn (pl ^. pInput)
     <&>

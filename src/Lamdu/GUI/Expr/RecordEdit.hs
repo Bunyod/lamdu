@@ -104,7 +104,8 @@ makeUnit ::
     , Has (Texts.Name Text) env
     , Grid.HasTexts env
     ) =>
-    Sugar.Payload (Sugar.EvaluationScopes Name i) Name i o ExprGui.Payload ->
+    Sugar.Payload
+        (Sugar.EvaluationScopes Name i Sugar.EvalValues) Name i o ExprGui.Payload ->
     GuiM env i o (Responsive o)
 makeUnit pl =
     do
@@ -227,7 +228,7 @@ makeAddFieldRow ::
     , Has (Texts.Name Text) env
     ) =>
     Sugar.TagReplace Name i o Sugar.EntityId ->
-    Sugar.Payload v name i o ExprGui.Payload ->
+    Sugar.Payload val name i o ExprGui.Payload ->
     GuiM env i o (TaggedItem o)
 makeAddFieldRow addField pl =
     TagEdit.makeTagHoleEdit addField mkPickResult tagHoleId

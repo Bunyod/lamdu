@@ -57,7 +57,9 @@ data ConventionalParams m = ConventionalParams
     { cpTags :: Set T.Tag
     , _cpParamInfos :: Map T.Tag ConvertM.TagFieldParam
     , _cpParams ::
-        Maybe (BinderParams (EvaluationScopes InternalName (T m)) InternalName (T m) (T m))
+        Maybe
+        (BinderParams
+            (EvaluationScopes InternalName (T m) EvalValues) InternalName (T m) (T m))
     , _cpAddFirstParam :: AddFirstParam InternalName (T m) (T m)
     , cpScopes :: ParamScopes
     , cpMLamParam :: Maybe ({- lambda's -}EntityId, V.Var)
@@ -631,7 +633,8 @@ mkVarInfo (Ann _ (TInst (TId name tid) _)) = VarNominal tid (name ^. inTag)
 mkFuncParam ::
     (Monad m, Applicative i) =>
     EntityId -> Input.Payload m a # V.Term -> info ->
-    ConvertM m (FuncParam (EvaluationScopes InternalName i) InternalName, info)
+    ConvertM m
+    (FuncParam (EvaluationScopes InternalName i EvalValues) InternalName, info)
 mkFuncParam entityId lamExprPl info =
     (,)
     <$> Lens.view ConvertM.scAnnotationsMode

@@ -137,7 +137,7 @@ make ::
     ) =>
     Annotation.EvalAnnotationOptions ->
     Widget.Id -> Widget.Id ->
-    (Sugar.FuncParam (Sugar.EvaluationScopes Name i) Name, Info i o) ->
+    (Sugar.FuncParam (Sugar.EvaluationScopes Name i Sugar.EvalValues) Name, Info i o) ->
     GuiM env i o [Responsive o]
 make annotationOpts prevId nextId (param, info) =
     do
