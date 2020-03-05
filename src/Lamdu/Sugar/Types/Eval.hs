@@ -88,7 +88,7 @@ type ParamScopes = EvalScopes [BinderParamScopeId]
 
 -- Tags for eval GADT
 data EvalValues
--- data EvalBinderBodyScope
+data EvalParamScopes
 
 -- For parameters: if there were any applies-of-lam in a parent scope,
 -- even if they got no values yet, it will be `Just mempty`, which
@@ -102,6 +102,8 @@ data EvaluationScopes name i tag where
     EvaluationScopes ::
         CurAndPrev (Maybe (Map ScopeId (i (ResVal name)))) ->
         EvaluationScopes name i EvalValues
+    EvaluationBinderScopes ::
+        BinderBodyScope -> EvaluationScopes name i EvalValues
 
 data EvalException o = EvalException
     { _evalExceptionType :: ER.Error
